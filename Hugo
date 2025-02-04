@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Snake</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #282c34;
+            color: white;
+            margin: 50px;
+        }
+        canvas {
+            background-color: black;
+        }
+        .scoreboard {
+            margin-top: 10px;
+        }
+        select, button {
+            margin: 10px;
+            padding: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jogo Snake</h1>
+    <div>
+        <label for="difficulty">Dificuldade:</label>
+        <select id="difficulty">
+            <option value="150">Fácil</option>
+            <option value="100" selected>Médio</option>
+            <option value="50">Difícil</option>
+        </select>
+        <button onclick="startGame()">Iniciar Jogo</button>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="scoreboard">
+        <h2>Pontuação: <span id="score">0</span></h2>
+        <h3>Recorde: <span id="highscore">0</span></h3>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const box = 20;
+        let snake, direction, food, score, highscore, speed, gameInterval;
+
+        function startGame() {
+            snake = [{ x: 10 * box, y: 10 * box }];
+            direction = "RIGHT";
+            food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+            score = 0;
+            document.getElementById("score").textContent = score;
+            highscore = localStorage.getItem("highscore") || 0;
+            document.getElementById("highscore").textContent = highscore;
+            speed = parseInt(document.getElementById("difficulty").value);
+            clearInterval(gameInterval);
+            gameInterval = setInterval(drawGame, speed);
+        }
+
+        document.addEventListener("keydown", changeDirection);
+
+        function changeDirection(event) {
+            const key = event.keyCode;
+            if (key === 37 && direction !== "RIGHT") direction = "LEFT";
+            else if (key === 38 && direction !== "DOWN") direction = "UP";
+            else if (key === 39 && direction !== "LEFT") direction = "RIGHT";
+            else if (key === 40 && direction !== "UP") direction = "DOWN";
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "red";
+            ctx.fillRect(food.x, food.y, box, box);
+            ctx.fillStyle = "lime";
+            snake.forEach(part => ctx.fillRect(part.x, part.y, box, box));
+            
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+            if (direction === "LEFT") snakeX -= box;
+            if (direction === "UP") snakeY -= box;
+            if (direction === "RIGHT") snakeX += box;
+            if (direction === "DOWN") snakeY += box;
+            
+            if (snakeX === food.x && snakeY === food.y) {
+                score++;
+                document.getElementById("score").textContent = score;
+                food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+            } else {
+                snake.pop();
+            }
+            
+            let newHead = { x: snakeX, y: snakeY };
+            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                if (score > highscore) {
+                    localStorage.setItem("highscore", score);
+                    document.getElementById("highscore").textContent = score;
+                }
+                setTimeout(() => {
+                    alert("Game Over! Sua pontuação: " + score);
+                    document.getElementById("difficulty").disabled = false;
+                }, 100);
+                return;
+            }
+            
+            snake.unshift(newHead);
+        }
+
+        function collision(head, array) {
+            return array.some(part => part.x === head.x && part.y === head.y);
+        }
+    </script>
+</body>
+</html>
